@@ -1,85 +1,311 @@
-Custom Shell Implementation
-A high-performance, POSIX-aligned command-line interpreter built from the ground up. This project implements the core logic of a modern shell, including a full recursive descent parser, process lifecycle management, and complex I/O redirection.
+# 🐚 MySH — A Custom Unix Shell Implementation
 
-1. Project Architecture
-The shell is engineered following a modular pipeline architecture to ensure separation of concerns and extensibility:
+**MySH** is a custom Unix-like shell written in C, designed to explore how command-line interpreters work internally.
+This project focuses on understanding **process management, parsing, pipes, redirection, and signals** by implementing a modular shell architecture.
 
-User Interface Layer: Managed via readline/libedit for robust line editing, history persistence, and Unicode support.
+---
 
-Lexer & Tokenizer: A state-machine-based lexer that handles quoting, escaping, and operator identification.
+# 📌 Project Overview
 
-Parser (AST): Converts tokens into an Abstract Syntax Tree (AST) to support complex command structures like pipelines and compound commands.
+Building a shell provides deep insight into:
 
-Expansion Engine: Handles environmental variable resolution ($VAR), tilde expansion (~), and globbing.
+* Process creation and management
+* File descriptor manipulation
+* Command parsing and execution
+* Unix signals and job control
+* Environment handling
 
-Execution Core: Manages the fork/exec lifecycle, process synchronization, and exit status tracking.
+This project follows a **layered architecture**, separating user input handling, parsing logic, and execution.
 
-2. Features implemented
-Core Execution
-[x] Simple command execution via execve.
+---
 
-[x] Path resolution and error handling (command not found).
+# 🏗️ Architecture
 
-[x] Support for command arguments and environment inheritance.
+The shell follows a modular pipeline similar to modern command-line interpreters.
 
-I/O & Redirection
-[x] Input redirection (<) and Output redirection (>, >>).
+```
+User Input
+    │
+    ▼
+User Interface Layer
+    │
+    ▼
+Lexer / Tokenizer
+    │
+    ▼
+Parser (AST Builder)
+    │
+    ▼
+Expansion Engine
+    │
+    ▼
+Executor
+    │
+    ▼
+I/O Redirection & Pipes
+    │
+    ▼
+System Calls
+```
 
-[x] Pipe implementation (|) for inter-process communication.
+---
 
-[x] File descriptor management using dup2.
+# ⚙️ Features Implemented (So Far)
 
-Built-in Commands
-[x] cd: Directory navigation.
+## ✅ Core Execution
 
-[x] export / unset: Environment variable management.
+* Command input loop
+* Basic command execution
+* Forking child processes
+* Executing programs using `execve()`
+* Waiting for process completion
 
-[x] alias: Command shortcutting.
+## ✅ Lexer / Tokenizer
 
-[x] exit: Graceful shell termination.
+* Splits input into tokens
+* Recognizes:
 
-3. Technical Implementation Details
-The AST Pipeline
-The shell doesn't just execute strings; it parses them into a tree structure. This allows for logical execution of commands:
+  * Commands
+  * Arguments
+  * Pipes (`|`)
+  * Redirections (`>`, `<`)
+  * Strings with quotes
 
-Plaintext
-Command: ls -l | grep ".c" > output.txt
+Example:
 
-       [Redirection: >]
-           /      \
-      [Pipe: |]  [File: output.txt]
-       /     \
-    [ls]    [grep]
-Signal Handling
-Implemented robust signal masks to ensure that Ctrl+C (SIGINT) and Ctrl+\ (SIGQUIT) interact correctly with child processes without terminating the parent shell.
+```
+Input:
+ls -l | grep "txt"
 
-4. Getting Started
-Prerequisites
-GCC / Clang
+Tokens:
+[WORD(ls), WORD(-l), PIPE(|), WORD(grep), STRING(txt)]
+```
 
-Make
+## 🚧 Parser (In Progress)
 
-Readline library (libreadline-dev on Debian/Ubuntu)
+* Building Abstract Syntax Tree (AST)
+* Identifying command relationships
+* Supporting pipelines
 
-Installation
-Clone the repository:
+## 🚧 Execution Pipeline
 
-Bash
-git clone https://github.com/Sushit-prog/shell-project.git
-Build the project:
+* Planned support for:
 
-Bash
+  * Pipes (`|`)
+  * Output redirection (`>`)
+  * Input redirection (`<`)
+
+---
+
+# 🧠 Core Concepts Used
+
+This project heavily uses core **Unix/Linux system calls**.
+
+| Category           | Functions Used            |
+| ------------------ | ------------------------- |
+| Process Management | `fork()`, `waitpid()`     |
+| Program Execution  | `execve()`                |
+| File Handling      | `open()`, `close()`       |
+| Pipes              | `pipe()`                  |
+| Redirection        | `dup2()`                  |
+| Signals            | `sigaction()` *(planned)* |
+
+---
+
+# 📂 Project Structure
+
+```
+mysh/
+│
+├── src/
+│   ├── main.c
+│   ├── lexer.c
+│   ├── parser.c
+│   ├── executor.c
+│   ├── io.c
+│   └── security.c
+│
+├── include/
+│   ├── lexer.h
+│   ├── parser.h
+│   ├── executor.h
+│   └── security.h
+│
+├── Makefile
+├── README.md
+├── .clang-format
+└── .clang-tidy
+```
+
+---
+
+# 🚀 Getting Started
+
+## Prerequisites
+
+* Linux or WSL
+* GCC Compiler
+* Make
+
+Install dependencies:
+
+```bash
+sudo apt update
+sudo apt install build-essential
+```
+
+---
+
+## Build
+
+```bash
 make
-Run the shell:
+```
 
-Bash
-./myshell
-5. Future Roadmap
-[ ] Job Control: Implementation of fg, bg, and process group management.
+---
 
-[ ] Security Hardening: Integrating seccomp for system call filtering.
+## Run
 
-[ ] Scripting Support: Handling if/else logic and while loops.
+```bash
+./mysh
+```
 
-Author
-Sushit Lal Pakrashy Full-Stack Developer & GenAI Engineer
+---
+
+# 🧪 Example Usage
+
+```
+$ ./mysh
+
+mysh> ls
+file1.txt
+file2.c
+
+mysh> echo Hello World
+Hello World
+```
+
+---
+
+# 🛠️ Development Roadmap
+
+## Phase 1 — Core Shell Loop ✅
+
+* [x] Input reading
+* [x] Basic command execution
+* [x] Process management
+
+## Phase 2 — Tokenization ✅
+
+* [x] Word splitting
+* [x] Pipe detection
+* [x] Quote handling
+
+## Phase 3 — Parsing 🚧
+
+* [ ] AST creation
+* [ ] Pipeline parsing
+
+## Phase 4 — Redirection 🚧
+
+* [ ] Output redirection (`>`)
+* [ ] Input redirection (`<`)
+
+## Phase 5 — Pipes 🚧
+
+* [ ] Multi-command pipelines
+
+## Phase 6 — Builtins 🔜
+
+* [ ] `cd`
+* [ ] `exit`
+* [ ] `export`
+
+## Phase 7 — Signals 🔜
+
+* [ ] Handle `Ctrl+C`
+* [ ] Job control
+
+---
+
+# 🧩 Built-in Commands (Planned)
+
+These commands must be implemented internally:
+
+* `cd`
+* `exit`
+* `pwd`
+* `export`
+* `unset`
+* `env`
+
+---
+
+# 📖 Learning Goals
+
+This project is designed to strengthen understanding of:
+
+* Operating System fundamentals
+* Unix system calls
+* Process lifecycle
+* File descriptors
+* Parsing techniques
+* Memory management in C
+
+---
+
+# 🐞 Debugging Tips
+
+Helpful tools during development:
+
+```bash
+strace ./mysh
+valgrind ./mysh
+gdb ./mysh
+```
+
+---
+
+# 🤝 Contributing
+
+Contributions are welcome.
+
+Steps:
+
+```bash
+fork repository
+create feature branch
+commit changes
+open pull request
+```
+
+---
+
+# 📜 License
+
+This project is released under the MIT License.
+
+---
+
+# 🙌 Acknowledgements
+
+Inspired by:
+
+* Unix Shell Design
+* POSIX Standards
+* Classic Shell Implementations
+* System Programming Concepts
+
+---
+
+# ⭐ Why This Project Matters
+
+Writing a shell is one of the most powerful ways to understand:
+
+* How programs start
+* How processes communicate
+* How operating systems interact with user commands
+
+It transforms system programming theory into real-world execution.
+
+---
