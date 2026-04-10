@@ -1,0 +1,3 @@
+/home/pakralal/mysh/build/CMakeFiles/mysh.dir
+/home/pakralal/mysh/build/CMakeFiles/edit_cache.dir
+/home/pakralal/mysh/build/CMakeFiles/rebuild_cache.dir
