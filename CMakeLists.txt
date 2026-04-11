@@ -8,7 +8,7 @@ set(CMAKE_C_FLAGS
     "${CMAKE_C_FLAGS} -Wall -Wextra -Wpedantic -Wshadow -Wformat=2 \
      -Wstrict-prototypes -Wmissing-prototypes -Wconversion")
 set(CMAKE_C_FLAGS_DEBUG
-    "-g3 -O0 -fsanitize=address,undefined -fno-omit-frame-pointer")
+    "-g3 -O0 -fsanitize=undefined -fno-omit-frame-pointer")
 set(CMAKE_C_FLAGS_RELEASE
     "-O2 -DNDEBUG -D_FORTIFY_SOURCE=2 -fstack-protector-strong")
 
