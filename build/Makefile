@@ -201,6 +201,30 @@ src/init/config.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/mysh.dir/build.make CMakeFiles/mysh.dir/src/init/config.c.s
 .PHONY : src/init/config.c.s
 
+src/jobs/jobs.o: src/jobs/jobs.c.o
+.PHONY : src/jobs/jobs.o
+
+# target to build an object file
+src/jobs/jobs.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mysh.dir/build.make CMakeFiles/mysh.dir/src/jobs/jobs.c.o
+.PHONY : src/jobs/jobs.c.o
+
+src/jobs/jobs.i: src/jobs/jobs.c.i
+.PHONY : src/jobs/jobs.i
+
+# target to preprocess a source file
+src/jobs/jobs.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mysh.dir/build.make CMakeFiles/mysh.dir/src/jobs/jobs.c.i
+.PHONY : src/jobs/jobs.c.i
+
+src/jobs/jobs.s: src/jobs/jobs.c.s
+.PHONY : src/jobs/jobs.s
+
+# target to generate assembly for a file
+src/jobs/jobs.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mysh.dir/build.make CMakeFiles/mysh.dir/src/jobs/jobs.c.s
+.PHONY : src/jobs/jobs.c.s
+
 src/lexer/lexer.o: src/lexer/lexer.c.o
 .PHONY : src/lexer/lexer.o
 
@@ -291,6 +315,9 @@ help:
 	@echo "... src/init/config.o"
 	@echo "... src/init/config.i"
 	@echo "... src/init/config.s"
+	@echo "... src/jobs/jobs.o"
+	@echo "... src/jobs/jobs.i"
+	@echo "... src/jobs/jobs.s"
 	@echo "... src/lexer/lexer.o"
 	@echo "... src/lexer/lexer.i"
 	@echo "... src/lexer/lexer.s"

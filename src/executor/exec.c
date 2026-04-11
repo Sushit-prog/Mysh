@@ -52,6 +52,42 @@ static int wait_for(pid_t pid)
     return 1;
 }
 
+/* ── Heredoc pipe creation ────────────────────────────────────────────────── */
+
+/*
+ * Given the heredoc content string, create a pipe, write content to the
+ * write end in a child, return the read end fd.
+ * Returns -1 on error.
+ */
+static int heredoc_pipe(const char *content)
+{
+    int pipefd[2];
+    if (pipe(pipefd) < 0) { perror("mysh: pipe"); return -1; }
+
+    pid_t pid = fork();
+    if (pid < 0) {
+        perror("mysh: fork");
+        close(pipefd[0]); close(pipefd[1]);
+        return -1;
+    }
+    if (pid == 0) {
+        close(pipefd[0]);
+        size_t len = strlen(content);
+        size_t written = 0;
+        while (written < len) {
+            ssize_t n = write(pipefd[1], content + written, len - written);
+            if (n < 0) _exit(1);
+            written += (size_t)n;
+        }
+        close(pipefd[1]);
+        _exit(0);
+    }
+    close(pipefd[1]);
+    return pipefd[0];
+}
+
+/* ── Redirection application ──────────────────────────────────────────────── */
+
 static int apply_redirs(Redir *r)
 {
     while (r) {
@@ -76,13 +112,18 @@ static int apply_redirs(Redir *r)
                 close(fd);
                 break;
             case REDIR_HEREDOC:
-                fprintf(stderr, "mysh: heredoc not yet implemented\n");
-                return -1;
+                fd = heredoc_pipe(r->target); /* target holds content after parsing */
+                if (fd < 0) return -1;
+                if (dup2(fd, r->fd) < 0) { perror("mysh: dup2"); close(fd); return -1; }
+                close(fd);
+                break;
         }
         r = r->next;
     }
     return 0;
 }
+
+/* ── Builtin execution in parent ──────────────────────────────────────────── */
 
 static int exec_builtin(AstNode *node)
 {
@@ -103,11 +144,9 @@ static int exec_builtin(AstNode *node)
     if (strcmp(argv[0], "cd") == 0) {
         const char *dir = argv[1] ? argv[1] : getenv("HOME");
         if (!dir) {
-            fprintf(stderr, "mysh: cd: HOME not set\n");
-            status = 1;
+            fprintf(stderr, "mysh: cd: HOME not set\n"); status = 1;
         } else if (chdir(dir) < 0) {
-            fprintf(stderr, "mysh: cd: %s: %s\n", dir, strerror(errno));
-            status = 1;
+            fprintf(stderr, "mysh: cd: %s: %s\n", dir, strerror(errno)); status = 1;
         } else {
             char *cwd = getcwd(NULL, 0);
             if (cwd) { setenv("PWD", cwd, 1); free(cwd); }
@@ -119,6 +158,8 @@ static int exec_builtin(AstNode *node)
     return status;
 }
 
+/* ── Simple command execution ─────────────────────────────────────────────── */
+
 static pid_t exec_simple(AstNode *node, int in_fd, int out_fd)
 {
     if (!node || node->kind != NODE_CMD || node->argc == 0) return 0;
@@ -127,9 +168,15 @@ static pid_t exec_simple(AstNode *node, int in_fd, int out_fd)
     if (pid < 0) { perror("mysh: fork"); return -1; }
 
     if (pid == 0) {
+        /* Put child in its own process group */
+        setpgid(0, 0);
+
         signal(SIGINT,  SIG_DFL);
         signal(SIGQUIT, SIG_DFL);
         signal(SIGTERM, SIG_DFL);
+        signal(SIGTSTP, SIG_DFL);
+        signal(SIGTTIN, SIG_DFL);
+        signal(SIGTTOU, SIG_DFL);
 
         if (in_fd  >= 0 && dup2(in_fd,  STDIN_FILENO)  < 0) { perror("mysh: dup2"); _exit(1); }
         if (out_fd >= 0 && dup2(out_fd, STDOUT_FILENO) < 0) { perror("mysh: dup2"); _exit(1); }
@@ -145,10 +192,15 @@ static pid_t exec_simple(AstNode *node, int in_fd, int out_fd)
         _exit(127);
     }
 
+    /* Parent: put child in its own process group */
+    setpgid(pid, pid);
+
     if (in_fd  >= 0) close(in_fd);
     if (out_fd >= 0) close(out_fd);
     return pid;
 }
+
+/* ── Pipeline execution ───────────────────────────────────────────────────── */
 
 #define MAX_PIPE_STAGES 64
 
@@ -164,8 +216,7 @@ static int exec_pipeline(AstNode *root)
         cur = cur->left;
     }
     stages[n++] = cur;
-
-    for (int i = 0, j = n - 1; i < j; i++, j--) {
+    for (int i = 0, j = n-1; i < j; i++, j--) {
         AstNode *t = stages[i]; stages[i] = stages[j]; stages[j] = t;
     }
 
@@ -174,8 +225,8 @@ static int exec_pipeline(AstNode *root)
         return p > 0 ? wait_for(p) : 1;
     }
 
-    int pipes[MAX_PIPE_STAGES - 1][2];
-    for (int i = 0; i < n - 1; i++) {
+    int pipes[MAX_PIPE_STAGES-1][2];
+    for (int i = 0; i < n-1; i++) {
         if (pipe(pipes[i]) < 0) {
             perror("mysh: pipe");
             for (int j = 0; j < i; j++) { close(pipes[j][0]); close(pipes[j][1]); }
@@ -187,20 +238,21 @@ static int exec_pipeline(AstNode *root)
 
     pid_t pids[MAX_PIPE_STAGES];
     for (int i = 0; i < n; i++) {
-        int in_fd  = (i == 0)     ? -1 : pipes[i-1][0];
-        int out_fd = (i == n - 1) ? -1 : pipes[i][1];
+        int in_fd  = (i == 0)   ? -1 : pipes[i-1][0];
+        int out_fd = (i == n-1) ? -1 : pipes[i][1];
         pids[i] = exec_simple(stages[i], in_fd, out_fd);
     }
-
-    for (int i = 0; i < n - 1; i++) { close(pipes[i][0]); close(pipes[i][1]); }
+    for (int i = 0; i < n-1; i++) { close(pipes[i][0]); close(pipes[i][1]); }
 
     int last = 0;
     for (int i = 0; i < n; i++) {
         int s = pids[i] > 0 ? wait_for(pids[i]) : 1;
-        if (i == n - 1) last = s;
+        if (i == n-1) last = s;
     }
     return last;
 }
+
+/* ── AST walker ───────────────────────────────────────────────────────────── */
 
 int exec_node(AstNode *node)
 {
@@ -229,8 +281,17 @@ int exec_node(AstNode *node)
         case NODE_BACKGROUND: {
             pid_t p = fork();
             if (p < 0) { perror("mysh: fork"); return 1; }
-            if (p == 0) _exit(exec_node(node->child));
-            fprintf(stderr, "[bg] %d\n", p);
+            if (p == 0) {
+                setpgid(0, 0);
+                signal(SIGINT,  SIG_DFL);
+                signal(SIGQUIT, SIG_DFL);
+                signal(SIGTSTP, SIG_IGN);
+                _exit(exec_node(node->child));
+            }
+            setpgid(p, p);
+            Job *j = job_add(p, NULL);
+            if (j) fprintf(stderr, "[%d] %d\n", j->id, p);
+            else   fprintf(stderr, "[?] %d\n", p);
             return 0;
         }
         case NODE_SUBSHELL: {

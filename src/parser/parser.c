@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "parser.h"
+#include "mysh.h"
 #include "lexer.h"
 
 /*
@@ -124,6 +125,13 @@ static Redir *parse_redir(Lexer *l)
         return NULL;
     }
 
+    if (kind == REDIR_HEREDOC) {
+        /* Read heredoc content now; store content (not delim) in target */
+        char *content = read_heredoc(target.value);
+        token_free(&target);
+        if (!content) return NULL;
+        return redir_new(kind, fd, content); /* content ownership transferred */
+    }
     return redir_new(kind, fd, target.value); /* target.value ownership transferred */
 }
 

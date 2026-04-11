@@ -24,4 +24,5 @@ add_executable(mysh
     src/parser/parser.c
     src/expand/expand.c
     src/executor/exec.c
+    src/jobs/jobs.c
 )
