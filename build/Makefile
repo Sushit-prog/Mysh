@@ -249,6 +249,30 @@ src/lexer/lexer.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/mysh.dir/build.make CMakeFiles/mysh.dir/src/lexer/lexer.c.s
 .PHONY : src/lexer/lexer.c.s
 
+src/linenoise/linenoise.o: src/linenoise/linenoise.c.o
+.PHONY : src/linenoise/linenoise.o
+
+# target to build an object file
+src/linenoise/linenoise.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mysh.dir/build.make CMakeFiles/mysh.dir/src/linenoise/linenoise.c.o
+.PHONY : src/linenoise/linenoise.c.o
+
+src/linenoise/linenoise.i: src/linenoise/linenoise.c.i
+.PHONY : src/linenoise/linenoise.i
+
+# target to preprocess a source file
+src/linenoise/linenoise.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mysh.dir/build.make CMakeFiles/mysh.dir/src/linenoise/linenoise.c.i
+.PHONY : src/linenoise/linenoise.c.i
+
+src/linenoise/linenoise.s: src/linenoise/linenoise.c.s
+.PHONY : src/linenoise/linenoise.s
+
+# target to generate assembly for a file
+src/linenoise/linenoise.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mysh.dir/build.make CMakeFiles/mysh.dir/src/linenoise/linenoise.c.s
+.PHONY : src/linenoise/linenoise.c.s
+
 src/main.o: src/main.c.o
 .PHONY : src/main.o
 
@@ -321,6 +345,9 @@ help:
 	@echo "... src/lexer/lexer.o"
 	@echo "... src/lexer/lexer.i"
 	@echo "... src/lexer/lexer.s"
+	@echo "... src/linenoise/linenoise.o"
+	@echo "... src/linenoise/linenoise.i"
+	@echo "... src/linenoise/linenoise.s"
 	@echo "... src/main.o"
 	@echo "... src/main.i"
 	@echo "... src/main.s"

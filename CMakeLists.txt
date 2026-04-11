@@ -16,6 +16,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 include_directories(include)
+include_directories(SYSTEM src/linenoise)
 
 add_executable(mysh
     src/main.c
@@ -25,4 +26,5 @@ add_executable(mysh
     src/expand/expand.c
     src/executor/exec.c
     src/jobs/jobs.c
+    src/linenoise/linenoise.c
 )

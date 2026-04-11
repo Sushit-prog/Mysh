@@ -11,6 +11,9 @@
 #include "parser.h"
 #include "executor.h"
 #include "expand.h"
+#include "linenoise.h"
+
+static char s_histfile[512] = {0};
 
 /* ── Global state ─────────────────────────────────────────────────────────── */
 ShellState g_shell = {
@@ -66,27 +69,6 @@ static void validate_path(void)
 }
 
 /* ── Prompt ───────────────────────────────────────────────────────────────── */
-static void print_prompt(void)
-{
-    if (!g_shell.interactive) return;
-    const char *ps1 = getenv("PS1");
-    if (ps1) {
-        fprintf(stderr, "%s", ps1);
-    } else {
-        char cwd[256];
-        if (getcwd(cwd, sizeof(cwd))) {
-            /* Shorten HOME to ~ */
-            const char *home = getenv("HOME");
-            if (home && strncmp(cwd, home, strlen(home)) == 0)
-                fprintf(stderr, "mysh ~%s> ", cwd + strlen(home));
-            else
-                fprintf(stderr, "mysh %s> ", cwd);
-        } else {
-            fprintf(stderr, "mysh> ");
-        }
-    }
-    fflush(stderr);
-}
 
 /* ── Input reading ────────────────────────────────────────────────────────── */
 static char *read_line(FILE *fp)
@@ -538,6 +520,7 @@ static int source_file(const char *path)
         free(line);
     }
     fclose(fp);
+    if (s_histfile[0]) linenoiseHistorySave(s_histfile);
     return g_shell.last_status;
 }
 
@@ -562,18 +545,44 @@ int shell_run(int argc, char **argv)
 
     setup_signals();
     validate_path();
+
+    /* History */
+    const char *home = getenv("HOME");
+    if (home) {
+        snprintf(s_histfile, sizeof(s_histfile), "%s/.mysh_history", home);
+        linenoiseHistorySetMaxLen(1000);
+        linenoiseHistoryLoad(s_histfile);
+    }
+
     load_rc();
 
     while (1) {
         if (g_got_sigchld) { g_got_sigchld = 0; job_check_and_report(); }
         if (g_got_sigint)  { g_got_sigint  = 0; fputc('\n', stderr); }
 
-        print_prompt();
-
-        char *line = read_line(stdin);
-        if (!line) {
-            if (g_shell.interactive) fputc('\n', stderr);
-            break;
+        /* Use linenoise for interactive input, read_line for scripts */
+        char *line = NULL;
+        if (g_shell.interactive) {
+            /* Build prompt string */
+            char prompt[256];
+            const char *ps1 = getenv("PS1");
+            if (ps1) {
+                snprintf(prompt, sizeof(prompt), "%s", ps1);
+            } else {
+                char cwd[200];
+                if (!getcwd(cwd, sizeof(cwd))) strcpy(cwd, "?");
+                const char *phome = getenv("HOME");
+                if (phome && strncmp(cwd, phome, strlen(phome)) == 0)
+                    snprintf(prompt, sizeof(prompt), "mysh ~%s> ", cwd + strlen(phome));
+                else
+                    snprintf(prompt, sizeof(prompt), "mysh %s> ", cwd);
+            }
+            line = linenoise(prompt);
+            if (!line) { fputc('\n', stderr); break; }
+            if (line[0] != '\0') linenoiseHistoryAdd(line);
+        } else {
+            line = read_line(stdin);
+            if (!line) break;
         }
 
         size_t i = 0;
@@ -583,5 +592,6 @@ int shell_run(int argc, char **argv)
         run_line(line);
         free(line);
     }
+    if (s_histfile[0]) linenoiseHistorySave(s_histfile);
     return g_shell.last_status;
 }

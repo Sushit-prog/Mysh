@@ -4,7 +4,7 @@
 #include <sys/types.h>
 
 /* ── Version ──────────────────────────────────────────────────────────────── */
-#define MYSH_VERSION "0.2.0"
+#define MYSH_VERSION "1.0.0"
 #define MYSH_NAME    "mysh"
 
 /* ── Exit status codes ────────────────────────────────────────────────────── */

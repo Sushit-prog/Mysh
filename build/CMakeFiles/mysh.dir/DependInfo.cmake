@@ -13,6 +13,7 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/home/pakralal/mysh/src/init/config.c" "CMakeFiles/mysh.dir/src/init/config.c.o" "gcc" "CMakeFiles/mysh.dir/src/init/config.c.o.d"
   "/home/pakralal/mysh/src/jobs/jobs.c" "CMakeFiles/mysh.dir/src/jobs/jobs.c.o" "gcc" "CMakeFiles/mysh.dir/src/jobs/jobs.c.o.d"
   "/home/pakralal/mysh/src/lexer/lexer.c" "CMakeFiles/mysh.dir/src/lexer/lexer.c.o" "gcc" "CMakeFiles/mysh.dir/src/lexer/lexer.c.o.d"
+  "/home/pakralal/mysh/src/linenoise/linenoise.c" "CMakeFiles/mysh.dir/src/linenoise/linenoise.c.o" "gcc" "CMakeFiles/mysh.dir/src/linenoise/linenoise.c.o.d"
   "/home/pakralal/mysh/src/main.c" "CMakeFiles/mysh.dir/src/main.c.o" "gcc" "CMakeFiles/mysh.dir/src/main.c.o.d"
   "/home/pakralal/mysh/src/parser/parser.c" "CMakeFiles/mysh.dir/src/parser/parser.c.o" "gcc" "CMakeFiles/mysh.dir/src/parser/parser.c.o.d"
   )

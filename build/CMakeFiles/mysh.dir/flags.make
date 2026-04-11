@@ -4,7 +4,7 @@
 # compile C with /usr/bin/cc
 C_DEFINES = 
 
-C_INCLUDES = -I/home/pakralal/mysh/include
+C_INCLUDES = -I/home/pakralal/mysh/include -isystem /home/pakralal/mysh/src/linenoise
 
 C_FLAGS =  -Wall -Wextra -Wpedantic -Wshadow -Wformat=2      -Wstrict-prototypes -Wmissing-prototypes -Wconversion -g3 -O0 -fsanitize=undefined -fno-omit-frame-pointer -std=gnu11
 
