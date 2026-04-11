@@ -90,4 +90,4 @@ CMakeFiles/mysh.dir/src/executor/exec.c.o: \
  /usr/include/x86_64-linux-gnu/bits/types/idtype_t.h \
  /home/pakralal/mysh/include/executor.h \
  /home/pakralal/mysh/include/parser.h /home/pakralal/mysh/include/lexer.h \
- /home/pakralal/mysh/include/mysh.h
+ /home/pakralal/mysh/include/expand.h /home/pakralal/mysh/include/mysh.h

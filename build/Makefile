@@ -153,6 +153,30 @@ src/executor/exec.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/mysh.dir/build.make CMakeFiles/mysh.dir/src/executor/exec.c.s
 .PHONY : src/executor/exec.c.s
 
+src/expand/expand.o: src/expand/expand.c.o
+.PHONY : src/expand/expand.o
+
+# target to build an object file
+src/expand/expand.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mysh.dir/build.make CMakeFiles/mysh.dir/src/expand/expand.c.o
+.PHONY : src/expand/expand.c.o
+
+src/expand/expand.i: src/expand/expand.c.i
+.PHONY : src/expand/expand.i
+
+# target to preprocess a source file
+src/expand/expand.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mysh.dir/build.make CMakeFiles/mysh.dir/src/expand/expand.c.i
+.PHONY : src/expand/expand.c.i
+
+src/expand/expand.s: src/expand/expand.c.s
+.PHONY : src/expand/expand.s
+
+# target to generate assembly for a file
+src/expand/expand.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/mysh.dir/build.make CMakeFiles/mysh.dir/src/expand/expand.c.s
+.PHONY : src/expand/expand.c.s
+
 src/init/config.o: src/init/config.c.o
 .PHONY : src/init/config.o
 
@@ -261,6 +285,9 @@ help:
 	@echo "... src/executor/exec.o"
 	@echo "... src/executor/exec.i"
 	@echo "... src/executor/exec.s"
+	@echo "... src/expand/expand.o"
+	@echo "... src/expand/expand.i"
+	@echo "... src/expand/expand.s"
 	@echo "... src/init/config.o"
 	@echo "... src/init/config.i"
 	@echo "... src/init/config.s"

@@ -187,15 +187,30 @@ static Token lex_one(Lexer *l)
     if (c == '\'') return lex_single_quoted(l, line, col);
     if (c == '"')  return lex_double_quoted(l, line, col);
 
-    /* Bare word */
+    /* Bare word — $(...) is kept intact as part of the word */
     size_t start = l->pos;
     while (l_cur(l) != '\0'  &&
            l_cur(l) != ' '   && l_cur(l) != '\t' && l_cur(l) != '\r' &&
            l_cur(l) != '\n'  && l_cur(l) != '|'  && l_cur(l) != '&'  &&
            l_cur(l) != ';'   && l_cur(l) != '<'  && l_cur(l) != '>'  &&
-           l_cur(l) != '('   && l_cur(l) != ')'  &&
            l_cur(l) != '\''  && l_cur(l) != '"')
     {
+        /* Allow $(...) inside a bare word */
+        if (l_cur(l) == '$') {
+            l_advance(l);
+            if (l_cur(l) == '(') {
+                l_advance(l);
+                int depth = 1;
+                while (l_cur(l) != '\0' && depth > 0) {
+                    if (l_cur(l) == '(') depth++;
+                    else if (l_cur(l) == ')') depth--;
+                    l_advance(l);
+                }
+            }
+            continue;
+        }
+        /* Stop at unquoted ( ) that are not part of $() */
+        if (l_cur(l) == '(' || l_cur(l) == ')') break;
         if (l_cur(l) == '\\') {
             l_advance(l);
             if (l_cur(l) == '\0') break;

@@ -9,6 +9,7 @@
 #include "lexer.h"
 #include "parser.h"
 #include "executor.h"
+#include "expand.h"
 
 /* ── Global shell state ───────────────────────────────────────────────────── */
 ShellState g_shell = {
@@ -111,6 +112,18 @@ static int try_builtin(AstNode *node, int *out_status)
     if (node->redirs) return 0; /* let exec_node handle redirected builtins */
 
     char **argv = node->argv;
+    /* Expand argv for builtins running in parent */
+    char **exp_argv = NULL;
+    {
+        int i = 0; while (argv[i]) i++;
+        exp_argv = malloc(sizeof(char*) * ((size_t)i + 1));
+        if (exp_argv) {
+            for (int j = 0; j < i; j++) exp_argv[j] = argv[j];
+            exp_argv[i] = NULL;
+            expand_argv(&exp_argv);
+            argv = exp_argv;
+        }
+    }
 
     if (strcmp(argv[0], "exit") == 0) {
         handle_builtin_exit(argv);
@@ -118,9 +131,11 @@ static int try_builtin(AstNode *node, int *out_status)
     }
     if (strcmp(argv[0], "cd") == 0) {
         *out_status = handle_builtin_cd(argv);
+        free(exp_argv);
         return 1;
     }
 
+    free(exp_argv);
     return 0; /* not a built-in */
 }
 
