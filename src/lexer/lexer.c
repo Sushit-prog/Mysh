@@ -187,37 +187,77 @@ static Token lex_one(Lexer *l)
     if (c == '\'') return lex_single_quoted(l, line, col);
     if (c == '"')  return lex_double_quoted(l, line, col);
 
-    /* Bare word — $(...) is kept intact as part of the word */
-    size_t start = l->pos;
-    while (l_cur(l) != '\0'  &&
-           l_cur(l) != ' '   && l_cur(l) != '\t' && l_cur(l) != '\r' &&
-           l_cur(l) != '\n'  && l_cur(l) != '|'  && l_cur(l) != '&'  &&
-           l_cur(l) != ';'   && l_cur(l) != '<'  && l_cur(l) != '>'  &&
-           l_cur(l) != '\''  && l_cur(l) != '"')
+    /* Bare word — adjacent quoted strings are part of the same token */
+    size_t cap = 64, len = 0;
+    char *buf = malloc(cap);
+    if (!buf) return make_simple(TOK_ERROR, line, col);
+
+    while (l_cur(l) != '\0' &&
+           l_cur(l) != ' '  && l_cur(l) != '\t' && l_cur(l) != '\r' &&
+           l_cur(l) != '\n' && l_cur(l) != '|'  && l_cur(l) != '&'  &&
+           l_cur(l) != ';'  && l_cur(l) != '<'   && l_cur(l) != '>'  &&
+           l_cur(l) != '('  && l_cur(l) != ')')
     {
-        /* Allow $(...) inside a bare word */
+#define BUF_PUSH(c) do { \
+    if (len + 1 >= cap) { \
+        cap *= 2; char *_t = realloc(buf, cap); \
+        if (!_t) { free(buf); return make_simple(TOK_ERROR, line, col); } \
+        buf = _t; \
+    } \
+    buf[len++] = (c); \
+} while(0)
+
+        /* $(...) inline */
         if (l_cur(l) == '$') {
-            l_advance(l);
+            BUF_PUSH(l_advance(l));
             if (l_cur(l) == '(') {
-                l_advance(l);
+                BUF_PUSH(l_advance(l));
                 int depth = 1;
                 while (l_cur(l) != '\0' && depth > 0) {
                     if (l_cur(l) == '(') depth++;
                     else if (l_cur(l) == ')') depth--;
-                    l_advance(l);
+                    BUF_PUSH(l_advance(l));
                 }
             }
             continue;
         }
-        /* Stop at unquoted ( ) that are not part of $() */
-        if (l_cur(l) == '(' || l_cur(l) == ')') break;
+        /* Single-quoted segment */
+        if (l_cur(l) == '\'') {
+            l_advance(l); /* skip opening quote */
+            while (l_cur(l) != '\'' && l_cur(l) != '\0')
+                BUF_PUSH(l_advance(l));
+            if (l_cur(l) == '\'') l_advance(l); /* skip closing quote */
+            continue;
+        }
+        /* Double-quoted segment */
+        if (l_cur(l) == '"') {
+            l_advance(l);
+            while (l_cur(l) != '"' && l_cur(l) != '\0') {
+                if (l_cur(l) == '\\') {
+                    l_advance(l);
+                    if (l_cur(l) != '\0') BUF_PUSH(l_advance(l));
+                } else {
+                    BUF_PUSH(l_advance(l));
+                }
+            }
+            if (l_cur(l) == '"') l_advance(l);
+            continue;
+        }
+        /* Backslash escape */
         if (l_cur(l) == '\\') {
             l_advance(l);
             if (l_cur(l) == '\0') break;
+            BUF_PUSH(l_advance(l));
+            continue;
         }
-        l_advance(l);
+        BUF_PUSH(l_advance(l));
+#undef BUF_PUSH
     }
-    return make_word(l->input + start, l->pos - start, line, col);
+    buf[len] = '\0';
+    /* Transfer ownership to make_word */
+    Token result = make_word(buf, len, line, col);
+    free(buf);
+    return result;
 }
 
 /* ── Public API ───────────────────────────────────────────────────────────── */

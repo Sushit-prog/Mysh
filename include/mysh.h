@@ -46,7 +46,18 @@ typedef struct {
     int   job_count;
 } ShellState;
 
+/* ── Alias table ──────────────────────────────────────────────────────────── */
+#define MYSH_MAX_ALIASES 128
+
+typedef struct {
+    char *name;
+    char *value;
+} Alias;
+
 extern ShellState g_shell;
+extern Alias g_aliases[MYSH_MAX_ALIASES];
+extern int   g_alias_count;
+const char *alias_lookup(const char *name);
 
 /* ── Job table API (used by executor and builtins) ───────────────────────── */
 Job *job_add(pid_t pgid, const char *cmdline);
